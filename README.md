@@ -53,3 +53,10 @@ Each save file stores a typed envelope with:
 - JSON payload
 
 Writes are atomic: temp file first, backup current file, then replace.
+
+## Editor Tools
+
+This package owns its save-data editor menu:
+
+- `Tools/Dreamy/Save/Open Save Folder`
+- `Tools/Dreamy/Save/Clear Save Data`

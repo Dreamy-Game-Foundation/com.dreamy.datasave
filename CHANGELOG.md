@@ -11,4 +11,5 @@ All notable changes to this package will be documented in this file.
 - Atomic JSON file storage
 - Plain, XOR, and AES codecs
 - Auto-save MonoBehaviour helper
+- Save folder open/clear editor menu items
 - Sample `PlayerSave` data class
