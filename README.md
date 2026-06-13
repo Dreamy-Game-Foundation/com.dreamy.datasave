@@ -54,6 +54,10 @@ Each save file stores a typed envelope with:
 
 Writes are atomic: temp file first, backup current file, then replace.
 
+`SaveAll()` snapshots loaded entries before writing, so updating the internal
+cache during each save does not invalidate dictionary enumeration. Null entries
+are skipped with a warning.
+
 ## Editor Tools
 
 This package owns its save-data editor menu:

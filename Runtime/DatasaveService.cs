@@ -86,8 +86,23 @@ namespace Dreamy.Datasave
 
         public void SaveAll()
         {
+            KeyValuePair<string, SaveData>[] snapshot =
+                new KeyValuePair<string, SaveData>[loadedData.Count];
+            int index = 0;
             foreach (KeyValuePair<string, SaveData> pair in loadedData)
             {
+                snapshot[index++] = pair;
+            }
+
+            foreach (KeyValuePair<string, SaveData> pair in snapshot)
+            {
+                if (pair.Value == null)
+                {
+                    Debug.LogWarning(
+                        $"Skipped null save data for key '{pair.Key}'.");
+                    continue;
+                }
+
                 SaveDynamic(pair.Key, pair.Value);
             }
         }
