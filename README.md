@@ -36,6 +36,10 @@ player.Coins += 100;
 service.Save(player);
 ```
 
+By default, loading a missing save creates and writes a complete JSON envelope
+using the default values from the `SaveData` type. Set
+`DatasaveOptions.CreateFileOnFirstLoad` to `false` to keep creation in memory.
+
 Register it from the game template composition root if `com.dreamy.core` is installed:
 
 ```csharp

@@ -37,6 +37,11 @@ namespace Dreamy.Datasave
                 data = new T();
                 loadedData[saveKey] = data;
                 data.OnAfterLoad();
+                if (options.CreateFileOnFirstLoad)
+                {
+                    Save(data, saveKey);
+                }
+
                 return data;
             }
 
