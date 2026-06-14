@@ -15,7 +15,7 @@ When using private Git URL packages, list this package in the game template mani
 {
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.1",
-    "com.dreamy.datasave": "https://github.com/Dreamy-Game-Foundation/com.dreamy.datasave.git#v0.1.0"
+    "com.dreamy.datasave": "https://github.com/Dreamy-Game-Foundation/com.dreamy.datasave.git#v0.2.0"
   }
 }
 ```
@@ -56,7 +56,17 @@ Each save file stores a typed envelope with:
 - UTC timestamp
 - JSON payload
 
-Writes are atomic: temp file first, backup current file, then replace.
+Writes use a temp file, preserve the previous file as a last-known-good backup,
+then replace the current file. If the current file cannot be decoded or
+validated, load automatically validates the backup and restores it when valid.
+
+The loader validates envelope format, stored data type, data version, and
+payload before deserialization. Unsupported future versions fail with a
+`DatasaveException` instead of being interpreted by an older client.
+
+`AesSaveCodec` writes authenticated AES payloads using HMAC-SHA256 and remains
+able to read the legacy unauthenticated format. XOR is obfuscation only and
+must not be treated as secure storage.
 
 `SaveAll()` snapshots loaded entries before writing, so updating the internal
 cache during each save does not invalidate dictionary enumeration. Null entries
