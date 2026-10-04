@@ -1,80 +1,65 @@
-# com.dreamy.datasave
+# Dreamy Datasave
 
-Versioned JSON save/load package for Dreamy internal Unity projects.
+Package thuộc Dreamy Game Studio. Hướng dẫn dưới đây mô tả cấu trúc, cách cài vào project và tích hợp ở root/scene.
 
-## Requirements
+## Cài package
 
-- Unity 6000.0+
-- `com.unity.nuget.newtonsoft-json`
+Dùng Unity 6000.0 trở lên. Sandbox đã tham chiếu package bằng `file:../LocalPackages/com.dreamy.datasave`. Project khác dùng Package Manager > + > Install package from disk và chọn package.json, hoặc Git URL của repository nội bộ. Cài cả dependency Dreamy/Git vào manifest của game; version dependency không tự cấu hình registry riêng.
 
-When using private Git URL packages, list this package in the game template manifest. Unity registry dependencies such as Newtonsoft can resolve by version.
+Dependency trực tiếp theo package.json:
 
-## Install
+- `com.unity.nuget.newtonsoft-json` (3.2.1)
 
-```json
-{
-  "dependencies": {
-    "com.unity.nuget.newtonsoft-json": "3.2.1",
-    "com.dreamy.datasave": "https://github.com/Dreamy-Game-Foundation/com.dreamy.datasave.git#v0.2.0"
-  }
-}
-```
+## Cấu trúc và asmdef
 
-## Usage
+| Assembly | Reference | Phạm vi |
+| --- | --- | --- |
+| `Dreamy.Datasave.Editor` | Dreamy.Datasave.Runtime | Chỉ Editor |
+| `Dreamy.Datasave.Runtime` | Unity.Newtonsoft.Json | Runtime |
+
+Trong asmdef của game, thêm assembly chứa API trực tiếp sử dụng. Code bootstrap reference thêm Core/DataConfig/Datasave/Economy theo nhu cầu; code async reference UniTask. Code gọi type sample reference assembly sample. Giữ Editor reference trong asmdef Editor-only.
+
+## Cấu trúc và cài service
+
+Runtime chứa SaveData, DatasaveService, options, envelope, codec và xử lý migration/backup. Editor chứa menu mở/xóa save. Package không phụ thuộc Core; game có thể dùng service trực tiếp hoặc đăng ký tại root.
 
 ```csharp
+using Dreamy.Datasave;
+using Dreamy.Core;
+
+var datasave = new DatasaveService();
+ServiceLocator.Register<IDatasaveService>(datasave);
+```
+
+Nếu dùng ServiceLocator, cài/reference Dreamy.Core.Runtime ở game. Tạo service một lần trong GameInstaller trước wallet và các feature có save.
+
+```csharp
+using System;
+using Dreamy.Datasave;
+
 [Serializable]
 public sealed class PlayerSave : SaveData
 {
     public int Coins;
-    public Dictionary<string, int> Items = new();
 }
 
-var service = new DatasaveService();
-var player = service.Load<PlayerSave>();
+// Trong method của game, với datasave đã khởi tạo:
+var player = datasave.Load<PlayerSave>();
 player.Coins += 100;
-service.Save(player);
+datasave.Save(player);
 ```
 
-By default, loading a missing save creates and writes a complete JSON envelope
-using the default values from the `SaveData` type. Set
-`DatasaveOptions.CreateFileOnFirstLoad` to `false` to keep creation in memory.
+Game gọi SaveAll khi pause/quit theo nhu cầu và unregister IDatasaveService khi teardown. Lần load đầu mặc định tạo file với giá trị mặc định; DatasaveOptions.CreateFileOnFirstLoad=false chỉ giữ trong bộ nhớ đến khi save.
 
-Register it from the game template composition root if `com.dreamy.core` is installed:
+## An toàn dữ liệu và công cụ
 
-```csharp
-ServiceLocator.Register<IDatasaveService>(new DatasaveService());
-```
+File dùng envelope với version/type/time/payload. Ghi qua file tạm và backup; nếu file chính lỗi, loader kiểm tra backup trước khi phục hồi. Dữ liệu/version không hỗ trợ trả DatasaveException. Thay đổi SaveData phải có chiến lược migration; giữ key/type ổn định sau khi phát hành.
 
-## Save Format
+AesSaveCodec dùng payload xác thực; XOR chỉ là làm rối dữ liệu. Game quản lý key và options codec. Tools/Dreamy/Save/Open Save Folder mở nơi lưu; Clear Save Data xóa dữ liệu local phục vụ thử nghiệm.
+## Sample
 
-Each save file stores a typed envelope with:
+Manifest hiện không khai báo sample để import qua Package Manager.
 
-- save format version
-- data type
-- data version
-- UTC timestamp
-- JSON payload
+## Addressables
 
-Writes use a temp file, preserve the previous file as a last-known-good backup,
-then replace the current file. If the current file cannot be decoded or
-validated, load automatically validates the backup and restores it when valid.
-
-The loader validates envelope format, stored data type, data version, and
-payload before deserialization. Unsupported future versions fail with a
-`DatasaveException` instead of being interpreted by an older client.
-
-`AesSaveCodec` writes authenticated AES payloads using HMAC-SHA256 and remains
-able to read the legacy unauthenticated format. XOR is obfuscation only and
-must not be treated as secure storage.
-
-`SaveAll()` snapshots loaded entries before writing, so updating the internal
-cache during each save does not invalidate dictionary enumeration. Null entries
-are skipped with a warning.
-
-## Editor Tools
-
-This package owns its save-data editor menu:
-
-- `Tools/Dreamy/Save/Open Save Folder`
-- `Tools/Dreamy/Save/Clear Save Data`
+Package này không có panel cần đăng ký vào Addressables Group. Việc đặt address của prefab/asset thuộc game hoặc package UI/Assets; không dùng Addressables thay bước đăng ký service/config/save.
