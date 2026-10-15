@@ -2,6 +2,11 @@
 
 All notable changes to this package will be documented in this file.
 
+## [1.0.1] - 2026-10-15
+
+- Resume increasing release versions above the highest existing v1.x tag after the 0.2.0 version regression.
+- Synchronize package metadata and installation documentation with v1.0.1; preserve all existing tags and historical changelog entries.
+
 ## [0.2.0] - 2026-06-15
 
 ### Added
